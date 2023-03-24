@@ -43,9 +43,9 @@ struct Solver{
         canexist0 = isblock0;
         canexist1 = isblock1;
         
-        destruct(0, isblock0);
-        destruct(1, isblock1);
-        hideblock();
+        destruct(0, isblock0, canexist0);
+        destruct(1, isblock1, canexist1);
+        // hideblock();
 
         assignblocknum(0, isblock0);
         assignblocknum(1, isblock1);
@@ -87,29 +87,48 @@ struct Solver{
     }
 
     //不要なブロックを削る
-    void destruct(int sil, vector<vector<vector<bool>>>& isblock){
+    void destruct(int sil, vector<vector<vector<bool>>>& isblock, vector<vector<vector<bool>>> canexist){
         vector<vector<bool>> zy_projection(d, vector<bool>(d, false)), zx_projection(d, vector<bool>(d, false));
         int n=0;
-        for(int x=0; x<d; x++){
-            for(int y=0; y<d; y++){
-                for(int z=0; z<d; z++){
+        for(int z=0; z<d; z++){
+            int unplaced = 0;
+            for(int x=0; x<d; x++){
+                for(int y=0; y<d; y++){
                     if(isblock[x][y][z]){
                         if(zx_projection[z][x] && zy_projection[z][y]){
                             isblock[x][y][z] = false;
-                            continue;
                         }
-
-                        zx_projection[z][x] = true;
-                        zy_projection[z][y] = true;
-                        n++;
+                        else if(zx_projection[z][x] || zy_projection[z][y]){
+                            isblock[x][y][z] = false;
+                            unplaced++;
+                        }
+                        else{
+                            zx_projection[z][x] = true;
+                            zy_projection[z][y] = true;
+                            n++;
+                        }
                     }
                 }
             }
+            for(int x=0; x<d; x++){
+                for(int y=0; y<d; y++){
+                    if(canexist[x][y][z] && !isblock[x][y][z] && (!zx_projection[z][x] || !zy_projection[z][y])){
+                        isblock[x][y][z] = true;
+                        zx_projection[z][x] = true;
+                        zy_projection[z][y] = true;
+                        unplaced--;
+                        n++;
+                        if(unplaced==0) break;
+                    }
+                }
+                if(unplaced==0) break;
+            }
+            
         }
         blocknum[sil] = n;
     }
 
-    //使われていないブロックを隠して置く
+    //使われていないブロックを隠して置く（単位ブロックのときは得点に影響しない）
     void hideblock(){
         int dist = blocknum[0] - blocknum[1];
         if(dist==0) return;
