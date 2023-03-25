@@ -24,9 +24,6 @@ using namespace std;
 
 using namespace std;
 
-string inputfile = "seed001-08in.txt";
-string outputfile = "seed001-08out.txt";
-
 struct vec3{
     int x, y, z;
     bool operator<(const vec3& v2) const{
@@ -103,11 +100,10 @@ struct Solver{
     v3b isblock0, isblock1, canexist0, canexist1, isCommon;
     v2i ans;
     v2b silf0, silr0, silf1, silr1;
-    vector<int> blocknum;
     vector<Block> blockset0, blockset1;
 
     Solver(int d, v3i silhouette) 
-    : d(d), silhouette(silhouette), ans(v2i(2)), blocknum({0,0}), isblock0(init_false_v3b_d), isblock1(init_false_v3b_d), canexist0(init_false_v3b_d), canexist1(init_false_v3b_d), silf0(init_false_v2b_d), silf1(init_false_v2b_d), silr0(init_false_v2b_d), silr1(init_false_v2b_d), common_bfs(d), ans0(init_zero_v3i_d), ans1(init_zero_v3i_d) { }
+    : d(d), silhouette(silhouette), isblock0(init_false_v3b_d), isblock1(init_false_v3b_d), canexist0(init_false_v3b_d), canexist1(init_false_v3b_d), silf0(init_false_v2b_d), silf1(init_false_v2b_d), silr0(init_false_v2b_d), silr1(init_false_v2b_d), common_bfs(d), ans0(init_zero_v3i_d), ans1(init_zero_v3i_d) { }
 
     void solve(){
         blockpos(0, isblock0);
@@ -137,8 +133,14 @@ struct Solver{
         v3b isblock0(init_false_v3b_d);
         v3b isblock1(init_false_v3b_d);
         //これまでに構成したブロックを投影する
-        projectioin(0, silf0, silr0, ans0, blockset0);
-        projectioin(1, silf1, silr1, ans1, blockset1);
+        projectioin(silf0, silr0, isblock0, blockset0);
+        projectioin(silf1, silr1, isblock1, blockset1);
+
+        monocube(silf0, silr0, canexist0, isblock0, blockset0);
+        monocube(silf1, silr1, canexist1, isblock1, blockset1);
+
+        assignblocknum(ans0, blockset0);
+        assignblocknum(ans1, blockset1);
 
         ansout();
         return;
@@ -158,7 +160,54 @@ struct Solver{
         }
     }
 
-    void projectioin(int row, v2b& front, v2b& right, v3i& ans, vector<Block> blockset){
+    void projectioin(v2b& front, v2b& right, v3b& isblock, vector<Block> blockset){
+        for(auto block:blockset){
+            auto [blocksize, cubevec] = block;
+            for(auto cube:cubevec){
+                auto [cx, cy, cz] = cube;
+                isblock[cx][cy][cz] = true;
+                front[cz][cx] = true;
+                right[cz][cy] = true;
+            }
+        }
+    }
+
+    //シルエットが埋まっていない位置に、モノキューブを置いていく。blocksetに追加していく。
+    void monocube(v2b& front, v2b& right, v3b canexist, v3b& isblock, vector<Block>& blockset){
+        for(int z=0; z<d; z++){
+            int unplaced = 0;
+            for(int x=0; x<d; x++){
+                for(int y=0; y<d; y++){
+                    if(canexist[x][y][z] && !isblock[x][y][z]){//モノキューブを置けるが置かれていない場所のみに置く
+                        if(!front[z][x] && !right[z][y]){//両方のシルエットが空いていたらキューブを追加する
+                            isblock[x][y][z] = true;
+                            blockset.push_back({1, {{x,y,z}}});
+                            front[z][x] = true;
+                            right[z][y] = true;
+                        }
+                        else if(!front[z][x] || !right[z][y]){//片方のシルエットが空いていたら数をカウントしてスキップ
+                            unplaced++;
+                        }
+                    }
+                }
+            }
+            for(int x=0; x<d; x++){
+                for(int y=0; y<d; y++){
+                    if(canexist[x][y][z] && !isblock[x][y][z] && (!front[z][x] || !right[z][y])){
+                        isblock[x][y][z] = true;
+                        blockset.push_back({1, {{x,y,z}}});
+                        front[z][x] = true;
+                        right[z][y] = true;
+                        unplaced--;
+                        if(unplaced==0) break;
+                    }
+                }
+                if(unplaced==0) break;
+            }
+        }
+    }
+
+    void assignblocknum(v3i& ans, vector<Block> blockset){
         int num = 0;
         for(auto block:blockset){
             num++;
@@ -166,27 +215,12 @@ struct Solver{
             for(auto cube:cubevec){
                 auto [cx, cy, cz] = cube;
                 ans[cx][cy][cz] = num;
-                front[cz][cx] = true;
-                right[cz][cy] = true;
             }
         }
-        blocknum[row] = num;
     }
 
     void ansout(){
-///Local
-        // ofstream FILEOUT(outputfile);
-        // FILEOUT << max(blocknum[0], blocknum[1]) << endl;
-        // for(int i=0; i<2; i++){
-        //     for(auto b:ans[i]) FILEOUT << b << " ";
-        //     FILEOUT << endl;
-        // }
-//Submit
-        cout << max(blocknum[0], blocknum[1]) << endl;
-        // for(int i=0; i<2; i++){
-        //     for(auto b:ans[i]) cout << b << " ";
-        //     cout << endl;
-        // }
+        cout << max(blockset0.size(), blockset1.size()) << endl;
 
         for(int x=0; x<d; x++){
             for(int y=0; y<d; y++){
@@ -205,100 +239,6 @@ struct Solver{
         }
         return;
     }
-
-    //不要なブロックを削る
-    void destruct(int sil, v3b& isblock, v3b canexist){
-        v2b zy_projection(d, vector<bool>(d, false)), zx_projection(d, vector<bool>(d, false));
-        int n=0;
-        for(int z=0; z<d; z++){
-            int unplaced = 0;
-            for(int x=0; x<d; x++){
-                for(int y=0; y<d; y++){
-                    if(isblock[x][y][z]){
-                        if(zx_projection[z][x] && zy_projection[z][y]){
-                            isblock[x][y][z] = false;
-                        }
-                        else if(zx_projection[z][x] || zy_projection[z][y]){
-                            isblock[x][y][z] = false;
-                            unplaced++;
-                        }
-                        else{
-                            zx_projection[z][x] = true;
-                            zy_projection[z][y] = true;
-                            n++;
-                        }
-                    }
-                }
-            }
-            for(int x=0; x<d; x++){
-                for(int y=0; y<d; y++){
-                    if(canexist[x][y][z] && !isblock[x][y][z] && (!zx_projection[z][x] || !zy_projection[z][y])){
-                        isblock[x][y][z] = true;
-                        zx_projection[z][x] = true;
-                        zy_projection[z][y] = true;
-                        unplaced--;
-                        n++;
-                        if(unplaced==0) break;
-                    }
-                }
-                if(unplaced==0) break;
-            }
-            
-        }
-        blocknum[sil] = n;
-    }
-
-    //使われていないブロックを隠して置く（単位ブロックのときは得点に影響しない）
-    void hideblock(){
-        int dist = blocknum[0] - blocknum[1];
-        if(dist==0) return;
-
-        //1のほうが多いので0に隠す
-        else if(dist<0) hide(-dist, isblock0, canexist0);
-        //0のほうが多いので1に隠す
-        else hide(dist, isblock1, canexist1);
-        return;
-    }
-
-    void hide(int dist, v3b& isblock, v3b canexist){
-        for(int x=0; x<d; x++){
-            for(int y=0; y<d; y++){
-                for(int z=0; z<d; z++){
-                    if(!isblock[x][y][z] && canexist[x][y][z]){
-                        isblock[x][y][z] = true;
-                        dist--;
-                        if(dist==0) break;
-                    }
-                }
-                if(dist==0) break;
-            }
-            if(dist==0) break;
-        }
-        return;
-    }
-
-    //シルエットが埋まっていない位置に、モノキューブを置いていく。blocksetに追加していく。
-    void destruct(int sil, v2b front, v2b right,  v3b canexist){
-        
-
-    }
-
-
-    void assignblocknum(int sil, v3b isblock){
-        int n=0;
-        for(int x=0; x<d; x++){
-            for(int y=0; y<d; y++){
-                for(int z=0; z<d; z++){
-                    if(isblock[x][y][z]){
-                        n++;
-                        ans[sil].push_back(n);
-                    }
-                    else ans[sil].push_back(0);
-                }
-            }
-        }
-        blocknum[sil] = n;
-    }
 };
 
 
@@ -307,22 +247,6 @@ int main(){
     chrono::system_clock::time_point  start, end; 
     start = chrono::system_clock::now(); // 計測開始時間
 
-///Local
-    // ifstream FILEIN(inputfile);
-    // int d; FILEIN >> d;
-    // vector<vector<vector<int>>> silhouette(4, vector<vector<int>>(d, vector<int>(d)));
-    // for(int sil=0; sil<4; sil++){
-    //     for(int i=0; i<d; i++){
-    //         for(int j=0; j<d; j++){
-    //             char a; FILEIN >> a;
-    //             silhouette[sil][i][j] = a-'0';
-    //         }
-    //     }
-    // }
-    // Solver solver(d, silhouette);
-    // solver.solve();
-
-///Submit
     int d; cin >> d;
     v3i silhouette(4, v2i(d, vector<int>(d)));
     for(int sil=0; sil<4; sil++){
