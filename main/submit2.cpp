@@ -32,20 +32,36 @@ struct Solver{
     vector<vector<vector<int>>> silhouette;
     vector<vector<vector<bool>>> isblock0, isblock1;
     vector<vector<vector<bool>>> canexist0, canexist1;
+    vector<vector<vector<bool>>> shareable;
     vector<vector<int>> ans;
     vector<int> blocknum;
     Solver(int d, vector<vector<vector<int>>> silhouette) 
-    : d(d), silhouette(silhouette), ans(vector<vector<int>>(2)), blocknum({0,0}), isblock0(d, vector<vector<bool>>(d, vector<bool>(d, false))), isblock1(d, vector<vector<bool>>(d, vector<bool>(d, false))), canexist0(d, vector<vector<bool>>(d, vector<bool>(d, false))), canexist1(d, vector<vector<bool>>(d, vector<bool>(d, false))) { }
+    : d(d), silhouette(silhouette), ans(vector<vector<int>>(2)), blocknum({0,0}), isblock0(d, vector<vector<bool>>(d, vector<bool>(d, false))), isblock1(d, vector<vector<bool>>(d, vector<bool>(d, false))), canexist0(d, vector<vector<bool>>(d, vector<bool>(d, false))), canexist1(d, vector<vector<bool>>(d, vector<bool>(d, false))), shareable(d, vector<vector<bool>>(d, vector<bool>(d, false))) { }
 
     void solve(){
         blockpos(0, isblock0);
         blockpos(1, isblock1);
         canexist0 = isblock0;
         canexist1 = isblock1;
+        for(int x=0; x<d; x++){
+            for(int y=0; y<d; y++){
+                for(int z=0; z<d; z++){
+                    shareable[x][y][z] = canexist0[x][y][z] & canexist1[x][y][z];
+                    if(shareable[x][y][z]){
+                        isblock0[x][y][z] = 1;
+                        isblock1[x][y][z] = 1;
+                    }
+                    else{
+                        isblock0[x][y][z] = 0;
+                        isblock1[x][y][z] = 0;
+                    }
+                }
+            }
+        }
         
-        destruct(0, isblock0);
-        destruct(1, isblock1);
-        hideblock();
+        // destruct(0, isblock0);
+        // destruct(1, isblock1);
+        // hideblock();
 
         assignblocknum(0, isblock0);
         assignblocknum(1, isblock1);
