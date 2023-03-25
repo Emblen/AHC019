@@ -18,7 +18,8 @@ using namespace std;
 #define v3b vector<vector<vector<bool>>>
 #define v2b vector<vector<bool>>
 #define init_false_v3b_d d,vector<vector<bool>>(d, vector<bool>(d, false))
-#define init_false_v2b_d d, vector<bool>(d, false)
+#define init_zero_v3i_d d,vector<vector<int>>(d, vector<int>(d, 0))
+#define init_false_v2b_d d,vector<bool>(d, false)
 #define INF 1e6
 
 using namespace std;
@@ -98,14 +99,15 @@ struct BFS{
 struct Solver{
     int d;
     BFS common_bfs;
-    v3i silhouette;
+    v3i silhouette, ans0, ans1;
     v3b isblock0, isblock1, canexist0, canexist1, isCommon;
     v2i ans;
-    v2b silf1, silr1, silf2, silr2;
+    v2b silf0, silr0, silf1, silr1;
     vector<int> blocknum;
-    vector<Block> blockset;
+    vector<Block> blockset0, blockset1;
+
     Solver(int d, v3i silhouette) 
-    : d(d), silhouette(silhouette), ans(v2i(2)), blocknum({0,0}), isblock0(init_false_v3b_d), isblock1(init_false_v3b_d), canexist0(init_false_v3b_d), canexist1(init_false_v3b_d), silf1(init_false_v2b_d), silf2(init_false_v2b_d), silr1(init_false_v2b_d), silr2(init_false_v2b_d), common_bfs(d) { }
+    : d(d), silhouette(silhouette), ans(v2i(2)), blocknum({0,0}), isblock0(init_false_v3b_d), isblock1(init_false_v3b_d), canexist0(init_false_v3b_d), canexist1(init_false_v3b_d), silf0(init_false_v2b_d), silf1(init_false_v2b_d), silr0(init_false_v2b_d), silr1(init_false_v2b_d), common_bfs(d), ans0(init_zero_v3i_d), ans1(init_zero_v3i_d) { }
 
     void solve(){
         blockpos(0, isblock0);
@@ -129,26 +131,14 @@ struct Solver{
             }
         }
         common_bfs.bfs(isblock0);
-        blockset = common_bfs.blockset;
-        
+        blockset0 = common_bfs.blockset;
+        blockset1 = common_bfs.blockset;
+
+        v3b isblock0(init_false_v3b_d);
+        v3b isblock1(init_false_v3b_d);
         //これまでに構成したブロックを投影する
-        for(auto block:blockset){
-            auto [blocksize, cubevec] = block;
-            for(auto cube:cubevec){
-                auto [cx, cy, cz] = cube;
-                silf1[cz][cx] = true;
-                silf2[cz][cx] = true;
-                silr1[cz][cy] = true;
-                silr2[cz][cy] = true;
-            }
-        }
-
-        // destruct(0, isblock0, canexist0);
-        // destruct(1, isblock1, canexist1);
-        // hideblock();
-
-        assignblocknum(0, isblock0);
-        assignblocknum(1, isblock1);
+        projectioin(0, silf0, silr0, ans0, blockset0);
+        projectioin(1, silf1, silr1, ans1, blockset1);
 
         ansout();
         return;
@@ -168,6 +158,21 @@ struct Solver{
         }
     }
 
+    void projectioin(int row, v2b& front, v2b& right, v3i& ans, vector<Block> blockset){
+        int num = 0;
+        for(auto block:blockset){
+            num++;
+            auto [blocksize, cubevec] = block;
+            for(auto cube:cubevec){
+                auto [cx, cy, cz] = cube;
+                ans[cx][cy][cz] = num;
+                front[cz][cx] = true;
+                right[cz][cy] = true;
+            }
+        }
+        blocknum[row] = num;
+    }
+
     void ansout(){
 ///Local
         // ofstream FILEOUT(outputfile);
@@ -178,11 +183,26 @@ struct Solver{
         // }
 //Submit
         cout << max(blocknum[0], blocknum[1]) << endl;
-        for(int i=0; i<2; i++){
-            for(auto b:ans[i]) cout << b << " ";
-            cout << endl;
-        }
+        // for(int i=0; i<2; i++){
+        //     for(auto b:ans[i]) cout << b << " ";
+        //     cout << endl;
+        // }
 
+        for(int x=0; x<d; x++){
+            for(int y=0; y<d; y++){
+                for(int z=0; z<d; z++){
+                    cout << ans0[x][y][z] << " ";
+                }
+            }
+        }
+        cout << endl;
+        for(int x=0; x<d; x++){
+            for(int y=0; y<d; y++){
+                for(int z=0; z<d; z++){
+                    cout << ans1[x][y][z] << " ";
+                }
+            }
+        }
         return;
     }
 
