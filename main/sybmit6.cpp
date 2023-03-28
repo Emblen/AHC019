@@ -151,9 +151,19 @@ struct Solver{
         int bnum0 = dicube(nowblocknum0, silf0, silr0, canexist0, isblock0, blockset0);
         int bnum1 = dicube(nowblocknum1, silf1, silr1, canexist1, isblock1, blockset1);
         
+        if(bnum0>bnum1){
+            int diff = adddicube(bnum0-bnum1, silf1, silr1, canexist1, isblock1, blockset1);
+            if(diff>0) adjust(diff, blockset0, silf0, silr0, isblock0);
+        }
+        else if(bnum1>bnum0) {
+            int diff = adddicube(bnum1-bnum0, silf0, silr0, canexist0, isblock0, blockset0);
+            if(diff>0) adjust(diff, blockset1, silf1, silr1, isblock1);
+        }
+        // if(bnum0>bnum1) adjust(bnum0-bnum1, blockset0, silf0, silr0, isblock0);
+        // else if(bnum0<bnum1) adjust(bnum1-bnum0, blockset1, silf1, silr1, isblock1);
 
-        if(bnum0>bnum1) adjust(bnum0-bnum1, blockset0, silf0, silr0, isblock0);
-        else if(bnum0<bnum1) adjust(bnum1-bnum0, blockset1, silf1, silr1, isblock1);
+        projectioin(silf0, silr0, isblock0, blockset0);
+        projectioin(silf1, silr1, isblock1, blockset1);
 
         int monostart0 = max(blockset0.size(), blockset1.size());
         int monostart1 = monostart0;
@@ -238,6 +248,38 @@ struct Solver{
             }
         }
         return nowblocknum - preblocknum;
+    }
+
+    int adddicube(int diff, v2b& front, v2b& right, v3b canexist, v3b& isblock, vector<Block>& blockset){
+        int addnum = 0;
+        int presize = blockset.size();
+        bool finished = false;
+        for(int x=0; x<d; x++){
+            for(int y=0; y<d; y++){
+                for(int z=0; z<d; z++){
+                    if(canexist[x][y][z] && !isblock[x][y][z]){
+                        for(auto nv:dxdydz){
+                            int nvx = x + nv.x;
+                            int nvy = y + nv.y;
+                            int nvz = z + nv.z;
+
+                            if(nvx<0 || d<=nvx || nvy<0 || d<=nvy || nvz<0 || d<=nvz || !canexist[nvx][nvy][nvz] || isblock[nvx][nvy][nvz] ) continue;
+                            
+                            addnum++;
+                            blockset.push_back({presize+addnum, 2, {{x,y,z},{nvx,nvy,nvz}}});
+                            isblock[x][y][z] = true;
+                            isblock[nvx][nvy][nvz] = true;
+                            if(diff-addnum==0) finished = true;
+                            break;
+                        }
+                    }
+                    if(finished) break;
+                }
+                if(finished) break;
+            }
+            if(finished) break;
+        }
+        return diff-addnum;
     }
 
     void adjust(int diff, vector<Block>& blockset, v2b& front, v2b& right, v3b& isblock){
@@ -374,15 +416,18 @@ int main(){
     // }
     // cout << "#finished" << endl;
     // cout << "#Time: " << elapsed << " ms" << endl;
-    double score = 0;
-    cout << endl;
-    for(auto v:solver.blockinfo){
-        auto [num, iscommon] = v;
-        double tmpscore = INF;
-        if(iscommon.first==2) tmpscore = 1/(double)iscommon.second;
-        else tmpscore = (double)iscommon.second;
-        score += tmpscore;
-    }
-    cout << "score = " << (long long)(score*1000000000) << endl;
+
+    // double score = 0;
+    // cout << endl;
+    // for(auto v:solver.blockinfo){
+    //     auto [num, iscommon] = v;
+    //     double tmpscore = INF;
+    //     if(iscommon.first==2) tmpscore = 1/(double)iscommon.second;
+    //     else tmpscore = (double)iscommon.second;
+    //     score += tmpscore;
+    // }
+    // cout << "score = " << (long long)(score*1000000000) << endl;
+
+    
     return 0;
 }
