@@ -135,8 +135,12 @@ struct Solver{
         blockset0 = common_bfs.blockset;
         blockset1 = common_bfs.blockset;
 
-        v3b isblock0(init_false_v3b_d);
-        v3b isblock1(init_false_v3b_d);
+        // v3b isblock0(init_false_v3b_d);
+        // v3b isblock1(init_false_v3b_d);
+        clear_v3all(isblock0);
+        clear_v3all(isblock1);
+        v3b tmp(init_false_v3b_d);
+        isblock0 = tmp; isblock1 = tmp;
         //これまでに構成したブロックを投影する
         projectioin(silf0, silr0, isblock0, blockset0);
         projectioin(silf1, silr1, isblock1, blockset1);
@@ -314,6 +318,19 @@ struct Solver{
             }
         }
         return;
+    }
+    
+    void clear_v3all(v3b clearvec){
+        for(int i=0; i<d; i++){
+            for(int j=0; j<d; j++){
+                clearvec[i][j].clear();
+                clearvec[i][j].shrink_to_fit();
+            }
+            clearvec[i].clear();
+            clearvec[i].shrink_to_fit();
+        }
+        clearvec.clear();
+        clearvec.shrink_to_fit();
     }
 };
 

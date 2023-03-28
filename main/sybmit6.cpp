@@ -29,6 +29,7 @@ struct vec3{
     bool operator<(const vec3& v2) const{
         return x == v2.x ? (y == v2.y ? z<v2.z : y<v2.y) : x<v2.x;
     }
+    int blocknum;
 };
 
 struct Block{
@@ -61,7 +62,7 @@ struct BFS{
                     blockset.push_back({setnumber+1, blocksize, {}});
 
                     while(!q3.empty()){
-                        auto [pvx, pvy, pvz] = q3.front();
+                        auto [pvx, pvy, pvz, bnum] = q3.front();
                         q3.pop();
                         if(visit[pvx][pvy][pvz]) continue;
 
@@ -79,7 +80,7 @@ struct BFS{
                         }
 
                         if(blocksize==1 && q3.size()==0){
-                            auto [popx, popy, popz] = blockset[setnumber].cooset[0];
+                            auto [popx, popy, popz, bnum] = blockset[setnumber].cooset[0];
                             visit[popx][popy][popz] = false;
                             blockset.pop_back(); //モノキューブだけならブロックを削除
                             setnumber--;
@@ -135,8 +136,12 @@ struct Solver{
         blockset0 = common_bfs.blockset;
         blockset1 = common_bfs.blockset;
 
-        v3b isblock0(init_false_v3b_d);
-        v3b isblock1(init_false_v3b_d);
+        // v3b isblock0(init_false_v3b_d);
+        // v3b isblock1(init_false_v3b_d);
+        clear_v3all(isblock0);
+        clear_v3all(isblock1);
+        v3b tmp(init_false_v3b_d);
+        isblock0 = tmp; isblock1 = tmp;
         //これまでに構成したブロックを投影する
         projectioin(silf0, silr0, isblock0, blockset0);
         projectioin(silf1, silr1, isblock1, blockset1);
@@ -179,7 +184,7 @@ struct Solver{
         for(auto block:blockset){
             auto [ordernum, blocksize, cubevec] = block;
             for(auto cube:cubevec){
-                auto [cx, cy, cz] = cube;
+                auto [cx, cy, cz, bnum] = cube;
                 isblock[cx][cy][cz] = true;
                 front[cz][cx] = true;
                 right[cz][cy] = true;
@@ -240,7 +245,7 @@ struct Solver{
             vector<vec3> vset = blockset[vsize-1].cooset;
             blockset.pop_back();
             for(auto v:vset){
-                auto [x, y, z] = v;
+                auto [x, y, z, bnum] = v;
                 isblock[x][y][z] = false;
                 front[z][x] = false;
                 right[z][y] = false;
@@ -289,7 +294,7 @@ struct Solver{
         for(auto block:blockset){
             auto [ordernum, blocksize, cubevec] = block;
             for(auto cube:cubevec){
-                auto [cx, cy, cz] = cube;
+                auto [cx, cy, cz, bnum] = cube;
                 ans[cx][cy][cz] = ordernum;
             }
         }
@@ -313,7 +318,21 @@ struct Solver{
                 }
             }
         }
+        cout << endl;
         return;
+    }
+
+    void clear_v3all(v3b clearvec){
+        for(int i=0; i<d; i++){
+            for(int j=0; j<d; j++){
+                clearvec[i][j].clear();
+                clearvec[i][j].shrink_to_fit();
+            }
+            clearvec[i].clear();
+            clearvec[i].shrink_to_fit();
+        }
+        clearvec.clear();
+        clearvec.shrink_to_fit();
     }
 };
 
@@ -338,6 +357,17 @@ int main(){
 
     end = chrono::system_clock::now();  // 計測終了時間
     double elapsed = chrono::duration_cast<chrono::milliseconds>(end-start).count(); //処理に要した時間をミリ秒に変換
+
+    v3b tmpblock = solver.isblock0;
+    for(int y=0; y<d; y++){
+        for(int z=0; z<d; z++){
+            for(int x=0; x<d; x++){
+                cout << solver.ans0[x][y][z];
+            }
+            cout << endl;
+        }
+        cout << endl;
+    }
     // cout << "#finished" << endl;
     // cout << "#Time: " << elapsed << " ms" << endl;
     return 0;
