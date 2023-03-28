@@ -11,6 +11,7 @@
 #include <random>
 #include <time.h>
 #include <chrono>
+#include <map>
 using namespace std;
 #define all(x) (x).begin(),(x).end()
 #define v3i vector<vector<vector<int>>>
@@ -106,6 +107,7 @@ struct Solver{
     int nowblocknum0, nowblocknum1;
     vector<Block> blockset0, blockset1;
     vector<vec3> dxdydz;
+    map<int, pair<int, int>> blockinfo;
 
     Solver(int d, v3i silhouette) 
     : d(d), silhouette(silhouette), isblock0(init_false_v3b_d), isblock1(init_false_v3b_d), canexist0(init_false_v3b_d), canexist1(init_false_v3b_d), silf0(init_false_v2b_d), silf1(init_false_v2b_d), silr0(init_false_v2b_d), silr1(init_false_v2b_d), common_bfs(d), ans0(init_zero_v3i_d), ans1(init_zero_v3i_d), nowblocknum0(0), nowblocknum1(0), dxdydz({{0,0,1}, {0,0,-1}, {0,1,0}, {0,-1,0}, {1,0,0}, {-1,0,0}}) { }
@@ -198,7 +200,7 @@ struct Solver{
             for(int y=0; y<d; y++){
                 for(int z=0; z<d; z++){
                     if(canexist[x][y][z] && !isblock[x][y][z]){//モノキューブを置けるが置かれていない場所のみに置く
-                        if(!front[z][x] && !right[z][y]){//片方のシルエットが空いていたらキューブを追加する
+                        if(!front[z][x] || !right[z][y]){//片方のシルエットが空いていたらキューブを追加する
                             isblock[x][y][z] = true;
                             nowblocknum++;
                             blockset.push_back({nowblocknum, 1, {{x,y,z}}});
@@ -297,11 +299,13 @@ struct Solver{
                 auto [cx, cy, cz, bnum] = cube;
                 ans[cx][cy][cz] = ordernum;
             }
+            if(blockinfo.find(ordernum)==blockinfo.end()) blockinfo[ordernum] = {1, blocksize};
+            else blockinfo[ordernum].first++;
         }
     }
 
     void ansout(){
-        cout << max(blockset0.size(), blockset1.size()) << endl;
+        cout << max(blockset0.back().num, blockset1.back().num) << endl;
 
         for(int x=0; x<d; x++){
             for(int y=0; y<d; y++){
@@ -358,17 +362,27 @@ int main(){
     end = chrono::system_clock::now();  // 計測終了時間
     double elapsed = chrono::duration_cast<chrono::milliseconds>(end-start).count(); //処理に要した時間をミリ秒に変換
 
-    v3b tmpblock = solver.isblock0;
-    for(int y=0; y<d; y++){
-        for(int z=0; z<d; z++){
-            for(int x=0; x<d; x++){
-                cout << solver.ans0[x][y][z];
-            }
-            cout << endl;
-        }
-        cout << endl;
-    }
+    // v3b tmpblock = solver.isblock0;
+    // for(int y=0; y<d; y++){
+    //     for(int z=0; z<d; z++){
+    //         for(int x=0; x<d; x++){
+    //             cout << solver.ans0[x][y][z];
+    //         }
+    //         cout << endl;
+    //     }
+    //     cout << endl;
+    // }
     // cout << "#finished" << endl;
     // cout << "#Time: " << elapsed << " ms" << endl;
+    double score = 0;
+    cout << endl;
+    for(auto v:solver.blockinfo){
+        auto [num, iscommon] = v;
+        double tmpscore = INF;
+        if(iscommon.first==2) tmpscore = 1/(double)iscommon.second;
+        else tmpscore = (double)iscommon.second;
+        score += tmpscore;
+    }
+    cout << "score = " << (long long)(score*1000000000) << endl;
     return 0;
 }

@@ -1,2 +1,2 @@
 
-    cout << "#Time: " << elapsed << " ms" << endl;
+    // cout << score << endl;
