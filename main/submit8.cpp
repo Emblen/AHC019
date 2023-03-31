@@ -157,7 +157,7 @@ struct BFS{
 };
 
 struct Solver{
-    int d, mode;
+    int d, mode, times;
     BFS common_bfs;
     v3i silhouette, ans0, ans1;
     v3b isblock0, isblock1, canexist0, canexist1, isCommon;
@@ -169,8 +169,8 @@ struct Solver{
     map<int, pair<int, int>> blockinfo;
     Lotation lotation;
 
-    Solver(int d, v3i silhouette, int mode) 
-    : d(d), silhouette(silhouette), isblock0(init_false_v3b_d), isblock1(init_false_v3b_d), canexist0(init_false_v3b_d), canexist1(init_false_v3b_d), silf0(init_false_v2b_d), silf1(init_false_v2b_d), silr0(init_false_v2b_d), silr1(init_false_v2b_d), common_bfs(d), ans0(init_zero_v3i_d), ans1(init_zero_v3i_d), nowblocknum0(0), nowblocknum1(0), dxdydz({{0,0,1}, {0,0,-1}, {0,1,0}, {0,-1,0}, {1,0,0}, {-1,0,0}}), lotation(d), mode(mode) { }
+    Solver(int d, v3i silhouette, int mode, int times) 
+    : d(d), silhouette(silhouette), isblock0(init_false_v3b_d), isblock1(init_false_v3b_d), canexist0(init_false_v3b_d), canexist1(init_false_v3b_d), silf0(init_false_v2b_d), silf1(init_false_v2b_d), silr0(init_false_v2b_d), silr1(init_false_v2b_d), common_bfs(d), ans0(init_zero_v3i_d), ans1(init_zero_v3i_d), nowblocknum0(0), nowblocknum1(0), dxdydz({{0,0,1}, {0,0,-1}, {0,1,0}, {0,-1,0}, {1,0,0}, {-1,0,0}}), lotation(d), mode(mode), times(times) { }
 
     void solve(){
         blockpos(0, isblock0);
@@ -187,7 +187,9 @@ struct Solver{
                 }
             }
         }
-        lotation.lotate90(mode, isblock1, originalcoo);
+        for(int i=0; i<times; i++){
+            lotation.lotate90(mode, isblock1, originalcoo);
+        }
         //同じ座標にモノキューブがあるかどうか
         for(int x=0; x<d; x++){
             for(int y=0; y<d; y++){
@@ -509,27 +511,30 @@ int main(){
     long long minscore = 1e15;
     v3i ans0, ans1;
     int blocknum = 0;
-    for(int i=0; i<4; i++){
-        Solver solver(d, silhouette, i);
-        solver.solve();
 
-        //スコア計算
-        double score = 0;
-        for(auto v:solver.blockinfo){
-            auto [num, iscommon] = v;
-            double tmpscore = INF;
-            if(iscommon.first==2) tmpscore = 1/(double)iscommon.second;
-            else tmpscore = (double)iscommon.second;
-            score += tmpscore;
-        }
-        long long finalscore = (long long)(score*1000000000);
-        // cout << finalscore << endl;
+    for(int mode=0; mode<4; mode++){
+        for(int times=0; times<3; times++){
+            Solver solver(d, silhouette, mode, times);
+            solver.solve();
 
-        if(finalscore<minscore){
-            minscore = finalscore;
-            blocknum = max(solver.blockset0.back().num, solver.blockset1.back().num);
-            ans0 = solver.ans0;
-            ans1 = solver.ans1;
+            //スコア計算
+            double score = 0;
+            for(auto v:solver.blockinfo){
+                auto [num, iscommon] = v;
+                double tmpscore = INF;
+                if(iscommon.first==2) tmpscore = 1/(double)iscommon.second;
+                else tmpscore = (double)iscommon.second;
+                score += tmpscore;
+            }
+            long long finalscore = (long long)(score*1000000000);
+            // cout << finalscore << endl;
+
+            if(finalscore<minscore){
+                minscore = finalscore;
+                blocknum = max(solver.blockset0.back().num, solver.blockset1.back().num);
+                ans0 = solver.ans0;
+                ans1 = solver.ans1;
+            }
         }
     }
 
@@ -554,6 +559,7 @@ int main(){
 
     // end = chrono::system_clock::now();  // 計測終了時間
     // double elapsed = chrono::duration_cast<chrono::milliseconds>(end-start).count(); //処理に要した時間をミリ秒に変換
+
     cout << minscore << endl;
     return 0;
 }

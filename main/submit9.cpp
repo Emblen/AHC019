@@ -107,7 +107,7 @@ struct BFS{
     BFS(int d)
     : d(d), visit(init_false_v3b_d), dxdydz({{0,0,1}, {0,0,-1}, {0,1,0}, {0,-1,0}, {1,0,0}, {-1,0,0}}) { }
 
-    int bfs(v3b& isCommon, v3b isblock){
+    int bfs(v3b& isCommon){
         int setnumber = 0;
         for(int x=0; x<d; x++){
             for(int y=0; y<d; y++){
@@ -157,7 +157,8 @@ struct BFS{
 };
 
 struct Solver{
-    int d, mode, times;
+    int d;
+    vector<int> modevec;
     BFS common_bfs;
     v3i silhouette, ans0, ans1;
     v3b isblock0, isblock1, canexist0, canexist1, isCommon;
@@ -169,8 +170,8 @@ struct Solver{
     map<int, pair<int, int>> blockinfo;
     Lotation lotation;
 
-    Solver(int d, v3i silhouette, int mode, int times) 
-    : d(d), silhouette(silhouette), isblock0(init_false_v3b_d), isblock1(init_false_v3b_d), canexist0(init_false_v3b_d), canexist1(init_false_v3b_d), silf0(init_false_v2b_d), silf1(init_false_v2b_d), silr0(init_false_v2b_d), silr1(init_false_v2b_d), common_bfs(d), ans0(init_zero_v3i_d), ans1(init_zero_v3i_d), nowblocknum0(0), nowblocknum1(0), dxdydz({{0,0,1}, {0,0,-1}, {0,1,0}, {0,-1,0}, {1,0,0}, {-1,0,0}}), lotation(d), mode(mode), times(times) { }
+    Solver(int d, v3i silhouette, vector<int> modevec) 
+    : d(d), silhouette(silhouette), isblock0(init_false_v3b_d), isblock1(init_false_v3b_d), canexist0(init_false_v3b_d), canexist1(init_false_v3b_d), silf0(init_false_v2b_d), silf1(init_false_v2b_d), silr0(init_false_v2b_d), silr1(init_false_v2b_d), common_bfs(d), ans0(init_zero_v3i_d), ans1(init_zero_v3i_d), nowblocknum0(0), nowblocknum1(0), dxdydz({{0,0,1}, {0,0,-1}, {0,1,0}, {0,-1,0}, {1,0,0}, {-1,0,0}}), lotation(d), modevec(modevec) { }
 
     void solve(){
         blockpos(0, isblock0);
@@ -186,7 +187,7 @@ struct Solver{
                 }
             }
         }
-        for(int i=0; i<times; i++){
+        for(auto mode:modevec){
             lotation.lotate90(mode, isblock1, originalcoo);
         }
         //同じ座標にモノキューブがあるかどうか
@@ -205,7 +206,7 @@ struct Solver{
             }
         }
         v3b tmp(init_false_v3b_d);
-        nowblocknum0 = common_bfs.bfs(isblock0, tmp);
+        nowblocknum0 = common_bfs.bfs(isblock0);
         nowblocknum1 = nowblocknum0;
         blockset0 = common_bfs.blockset;
         blockset1 = common_bfs.blockset;
@@ -521,32 +522,38 @@ int main(){
     v3i ans0, ans1;
     int blocknum = 0;
 
-    for(int mode=0; mode<4; mode++){
-        for(int times=0; times<3; times++){
-            Solver solver(d, silhouette, mode, times);
-            solver.solve();
+    for(int i=0; i<4; i++){
+        for(int j=0; j<4; j++){
+            for(int k=0; k<4; k++){
+                vector<int> modevec = {i, j, k};
 
-            //スコア計算
-            double score = 0;
-            for(auto v:solver.blockinfo){
-                auto [num, iscommon] = v;
-                double tmpscore = INF;
-                if(iscommon.first==2) tmpscore = 1/(double)iscommon.second;
-                else tmpscore = (double)iscommon.second;
-                score += tmpscore;
-            }
-            long long finalscore = (long long)(score*1000000000);
-            // cout << finalscore << endl;
+                Solver solver(d, silhouette, modevec);
+                solver.solve();
 
-            if(finalscore<minscore){
-                minscore = finalscore;
-                blocknum = max(solver.blockset0.back().num, solver.blockset1.back().num);
-                ans0 = solver.ans0;
-                ans1 = solver.ans1;
+                //スコア計算
+                double score = 0;
+                for(auto v:solver.blockinfo){
+                    auto [num, iscommon] = v;
+                    double tmpscore = INF;
+                    if(iscommon.first==2) tmpscore = 1/(double)iscommon.second;
+                    else tmpscore = (double)iscommon.second;
+                    score += tmpscore;
+                }
+                long long finalscore = (long long)(score*1000000000);
+                // cout << finalscore << endl;
+
+                if(finalscore<minscore){
+                    minscore = finalscore;
+                    blocknum = max(solver.blockset0.back().num, solver.blockset1.back().num);
+                    ans0 = solver.ans0;
+                    ans1 = solver.ans1;
+                }
             }
         }
     }
 
+    vector<int> modevec = {0,1,1};
+    
     cout << blocknum << endl;
 
     for(int x=0; x<d; x++){
