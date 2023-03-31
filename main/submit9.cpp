@@ -49,7 +49,7 @@ struct Lotation{
         v3b afterlotation(init_false_v3b_d);
         vector<vector<vector<vec3>>> tmporiginal(d, vector<vector<vec3>>(d, vector<vec3>(d)));
 
-        if(mode==0){//x軸まわり
+        if(mode==1){//x軸まわり
             for(int x=0; x<d; x++){
                 for(int y=0; y<d; y++){
                     for(int z=0; z<d; z++){
@@ -62,7 +62,7 @@ struct Lotation{
                 }
             }
         }
-        else if(mode==1){//y軸まわり
+        else if(mode==2){//y軸まわり
             for(int x=0; x<d; x++){
                 for(int y=0; y<d; y++){
                     for(int z=0; z<d; z++){
@@ -75,7 +75,7 @@ struct Lotation{
                 }
             }
         }
-        else if(mode==2){//z軸まわり
+        else if(mode==3){//z軸まわり
             for(int x=0; x<d; x++){
                 for(int y=0; y<d; y++){
                     for(int z=0; z<d; z++){
@@ -101,13 +101,12 @@ struct Lotation{
 struct BFS{
     int d;
     vector<vec3> dxdydz;
-    vector<Block> blockset;
     v3b visit;
 
     BFS(int d)
     : d(d), visit(init_false_v3b_d), dxdydz({{0,0,1}, {0,0,-1}, {0,1,0}, {0,-1,0}, {1,0,0}, {-1,0,0}}) { }
 
-    int bfs(v3b& isCommon){
+    int bfs(v3b& isCommon, vector<Block>& blockset){
         int setnumber = 0;
         for(int x=0; x<d; x++){
             for(int y=0; y<d; y++){
@@ -205,11 +204,11 @@ struct Solver{
                 }
             }
         }
+        cout << "OK" << endl;
         v3b tmp(init_false_v3b_d);
-        nowblocknum0 = common_bfs.bfs(isblock0);
+        nowblocknum0 = common_bfs.bfs(isblock0, blockset0);
         nowblocknum1 = nowblocknum0;
-        blockset0 = common_bfs.blockset;
-        blockset1 = common_bfs.blockset;
+        blockset1 = blockset0;
 
         putbackcoo(blockset1, originalcoo);
 
@@ -522,6 +521,7 @@ int main(){
     v3i ans0, ans1;
     int blocknum = 0;
 
+    
     for(int i=0; i<4; i++){
         for(int j=0; j<4; j++){
             for(int k=0; k<4; k++){
@@ -540,7 +540,7 @@ int main(){
                     score += tmpscore;
                 }
                 long long finalscore = (long long)(score*1000000000);
-                // cout << finalscore << endl;
+                cout << i<<j<<k<< ":" << finalscore << endl;
 
                 if(finalscore<minscore){
                     minscore = finalscore;
@@ -573,8 +573,8 @@ int main(){
     }
     cout << endl;
 
-    // end = chrono::system_clock::now();  // 計測終了時間
-    // double elapsed = chrono::duration_cast<chrono::milliseconds>(end-start).count(); //処理に要した時間をミリ秒に変換
+    end = chrono::system_clock::now();  // 計測終了時間
+    double elapsed = chrono::duration_cast<chrono::milliseconds>(end-start).count(); //処理に要した時間をミリ秒に変換
 
     // cout << minscore << endl;
     return 0;
