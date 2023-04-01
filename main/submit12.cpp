@@ -159,6 +159,7 @@ struct BFS{
 struct Solver{
     int d;
     vector<int> modevec;
+    int startmode2;
     BFS common_bfs;
     v3i silhouette, ans0, ans1;
     v3b isblock0, isblock1, canexist0, canexist1, isCommon;
@@ -171,8 +172,8 @@ struct Solver{
     Lotation lotation;
     vector<vector<vector<vec3>>> originalcoo;
 
-    Solver(int d, v3i silhouette, vector<int> modevec) 
-    : d(d), silhouette(silhouette), isblock0(init_false_v3b_d), isblock1(init_false_v3b_d), canexist0(init_false_v3b_d), canexist1(init_false_v3b_d), silf0(init_false_v2b_d), silf1(init_false_v2b_d), silr0(init_false_v2b_d), silr1(init_false_v2b_d), common_bfs(d), ans0(init_zero_v3i_d), ans1(init_zero_v3i_d), nowblocknum0(0), nowblocknum1(0), dxdydz({{0,0,1}, {0,0,-1}, {0,1,0}, {0,-1,0}, {1,0,0}, {-1,0,0}}), lotation(d), modevec(modevec), originalcoo(d, vector<vector<vec3>>(d, vector<vec3>(d))) { }
+    Solver(int d, v3i silhouette, vector<int> modevec, int startmode2) 
+    : d(d), silhouette(silhouette), isblock0(init_false_v3b_d), isblock1(init_false_v3b_d), canexist0(init_false_v3b_d), canexist1(init_false_v3b_d), silf0(init_false_v2b_d), silf1(init_false_v2b_d), silr0(init_false_v2b_d), silr1(init_false_v2b_d), common_bfs(d), ans0(init_zero_v3i_d), ans1(init_zero_v3i_d), nowblocknum0(0), nowblocknum1(0), dxdydz({{0,0,1}, {0,0,-1}, {0,1,0}, {0,-1,0}, {1,0,0}, {-1,0,0}}), lotation(d), modevec(modevec), originalcoo(d, vector<vector<vec3>>(d, vector<vec3>(d))), startmode2(startmode2) { }
 
     void solve(){
         blockpos(0, canexist0);
@@ -185,19 +186,21 @@ struct Solver{
         for(auto mode:modevec) lotation.lotate90(mode, isblock1, originalcoo);
         build_block();
 
-
         for(int i=0; i<4; i++){
             for(int j=0; j<4; j++){
                 for(int k=0; k<4; k++){
+                    int ni = (i+startmode2)%4;
+                    int nj = (j+startmode2)%4;
+                    int nk = (k+startmode2)%4;
+                    vector<int> modevec2 = {ni, nj, nk};
                     init_originalcoo();
                     isblock0 = canexist0;
                     isblock1 = canexist1;
-                    vector<int> modevec2 = {i, j, k};
                     for(auto mode:modevec2) lotation.lotate90(mode, isblock1, originalcoo);
                     build_block();
                 }
             }
-        }
+        }        
 
         int bnum0 = dicube(nowblocknum0, silf0, silr0, canexist0, isblock0, blockset0);
         int bnum1 = dicube(nowblocknum1, silf1, silr1, canexist1, isblock1, blockset1);
@@ -506,33 +509,33 @@ int main(){
         for(int j=0; j<4; j++){
             for(int k=0; k<4; k++){
 
-                vector<int> modevec = {i, j, k};
+                for(int i2=0; i2<4; i2++){
+                    vector<int> modevec = {i, j, k};
 
-                Solver solver(d, silhouette, modevec);
-                solver.solve();
+                    Solver solver(d, silhouette, modevec, i2);
+                    solver.solve();
 
-                //スコア計算
-                double score = 0;
-                for(auto v:solver.blockinfo){
-                    auto [num, iscommon] = v;
-                    double tmpscore = INF;
-                    if(iscommon.first==2) tmpscore = 1/(double)iscommon.second;
-                    else tmpscore = (double)iscommon.second;
-                    score += tmpscore;
-                }
-                long long finalscore = (long long)(score*1000000000);
-                // cout << finalscore << endl;
+                    //スコア計算
+                    double score = 0;
+                    for(auto v:solver.blockinfo){
+                        auto [num, iscommon] = v;
+                        double tmpscore = INF;
+                        if(iscommon.first==2) tmpscore = 1/(double)iscommon.second;
+                        else tmpscore = (double)iscommon.second;
+                        score += tmpscore;
+                    }
+                    long long finalscore = (long long)(score*1000000000);
+                    // cout << finalscore << endl;
 
-                if(finalscore<minscore){
-                    minscore = finalscore;
-                    blocknum = max(solver.blockset0.back().num, solver.blockset1.back().num);
-                    ans0 = solver.ans0;
-                    ans1 = solver.ans1;
+                    if(finalscore<minscore){
+                        minscore = finalscore;
+                        blocknum = max(solver.blockset0.back().num, solver.blockset1.back().num);
+                        ans0 = solver.ans0;
+                        ans1 = solver.ans1;
+                    }
                 }
             }
-            if(finished) break;
         }
-        if(finished) break;
     }
 
     //テスト用
@@ -562,6 +565,6 @@ int main(){
     }
     cout << endl;
 
-    cout << minscore << endl;
+    // cout << minscore << endl;
     return 0;
 }
