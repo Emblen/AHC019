@@ -106,7 +106,7 @@ struct BFS{
     BFS(int d)
     : d(d), visit(init_false_v3b_d), dxdydz({{0,0,1}, {0,0,-1}, {0,1,0}, {0,-1,0}, {1,0,0}, {-1,0,0}}) { }
 
-    void bfs(v3b& isCommon, vector<Block>& blockset, int nowblocknum){
+    void bfs(v3b isCommon, vector<Block>& blockset, int nowblocknum){
         int setnumber = nowblocknum;
         for(int x=0; x<d; x++){
             for(int y=0; y<d; y++){

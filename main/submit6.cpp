@@ -151,16 +151,16 @@ struct Solver{
         int bnum0 = dicube(nowblocknum0, silf0, silr0, canexist0, isblock0, blockset0);
         int bnum1 = dicube(nowblocknum1, silf1, silr1, canexist1, isblock1, blockset1);
         
-        if(bnum0>bnum1){
-            int diff = adddicube(bnum0-bnum1, silf1, silr1, canexist1, isblock1, blockset1);
-            if(diff>0) adjust(diff, blockset0, silf0, silr0, isblock0);
-        }
-        else if(bnum1>bnum0) {
-            int diff = adddicube(bnum1-bnum0, silf0, silr0, canexist0, isblock0, blockset0);
-            if(diff>0) adjust(diff, blockset1, silf1, silr1, isblock1);
-        }
-        // if(bnum0>bnum1) adjust(bnum0-bnum1, blockset0, silf0, silr0, isblock0);
-        // else if(bnum0<bnum1) adjust(bnum1-bnum0, blockset1, silf1, silr1, isblock1);
+        // if(bnum0>bnum1){
+        //     int diff = adddicube(bnum0-bnum1, silf1, silr1, canexist1, isblock1, blockset1);
+        //     if(diff>0) adjust(diff, blockset0, silf0, silr0, isblock0);
+        // }
+        // else if(bnum1>bnum0) {
+        //     int diff = adddicube(bnum1-bnum0, silf0, silr0, canexist0, isblock0, blockset0);
+        //     if(diff>0) adjust(diff, blockset1, silf1, silr1, isblock1);
+        // }
+        if(bnum0>bnum1) adjust(bnum0-bnum1, blockset0, silf0, silr0, isblock0);
+        else if(bnum0<bnum1) adjust(bnum1-bnum0, blockset1, silf1, silr1, isblock1);
 
         projectioin(silf0, silr0, isblock0, blockset0);
         projectioin(silf1, silr1, isblock1, blockset1);
